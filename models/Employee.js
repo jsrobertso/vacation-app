@@ -18,6 +18,10 @@ const employeeSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  password: {
+    type: String,
+    required: true
+  },
   location_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Location',
@@ -25,7 +29,7 @@ const employeeSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['employee', 'supervisor'],
+    enum: ['employee', 'supervisor', 'administrator'],
     default: 'employee'
   },
   supervisor_id: {

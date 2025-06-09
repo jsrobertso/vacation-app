@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const Employee = require('./models/Employee');
 const Location = require('./models/Location');
 const DenialReason = require('./models/DenialReason');
@@ -21,6 +22,8 @@ const seedData = async () => {
     await DenialReason.deleteMany({});
     await VacationRequest.deleteMany({});
     console.log('Cleared existing data');
+
+    const hashedPassword = await bcrypt.hash('password', 10);
 
     // Create Locations
     const locations = await Location.insertMany([
@@ -67,12 +70,21 @@ const seedData = async () => {
     ]);
     console.log('Created denial reasons');
 
+    const admin = await Employee.create({
+      first_name: 'Admin',
+      last_name: 'User',
+      email: 'admin@company.com',
+      password: hashedPassword,
+      role: 'administrator'
+    });
+
     // Create Employees (Supervisors first)
     const supervisors = await Employee.insertMany([
       {
         first_name: 'Sarah',
         last_name: 'Johnson',
         email: 'sarah.johnson@company.com',
+        password: hashedPassword,
         location_id: locations[0]._id, // New York
         role: 'supervisor'
       },
@@ -80,6 +92,7 @@ const seedData = async () => {
         first_name: 'Michael',
         last_name: 'Chen',
         email: 'michael.chen@company.com',
+        password: hashedPassword,
         location_id: locations[1]._id, // Los Angeles
         role: 'supervisor'
       },
@@ -87,6 +100,7 @@ const seedData = async () => {
         first_name: 'Jennifer',
         last_name: 'Rodriguez',
         email: 'jennifer.rodriguez@company.com',
+        password: hashedPassword,
         location_id: locations[2]._id, // Chicago
         role: 'supervisor'
       }
@@ -99,6 +113,7 @@ const seedData = async () => {
         first_name: 'John',
         last_name: 'Smith',
         email: 'john.smith@company.com',
+        password: hashedPassword,
         location_id: locations[0]._id,
         role: 'employee',
         supervisor_id: supervisors[0]._id
@@ -107,6 +122,7 @@ const seedData = async () => {
         first_name: 'Emma',
         last_name: 'Wilson',
         email: 'emma.wilson@company.com',
+        password: hashedPassword,
         location_id: locations[0]._id,
         role: 'employee',
         supervisor_id: supervisors[0]._id
@@ -115,6 +131,7 @@ const seedData = async () => {
         first_name: 'David',
         last_name: 'Brown',
         email: 'david.brown@company.com',
+        password: hashedPassword,
         location_id: locations[1]._id,
         role: 'employee',
         supervisor_id: supervisors[1]._id
@@ -123,6 +140,7 @@ const seedData = async () => {
         first_name: 'Lisa',
         last_name: 'Davis',
         email: 'lisa.davis@company.com',
+        password: hashedPassword,
         location_id: locations[1]._id,
         role: 'employee',
         supervisor_id: supervisors[1]._id
@@ -131,6 +149,7 @@ const seedData = async () => {
         first_name: 'Robert',
         last_name: 'Miller',
         email: 'robert.miller@company.com',
+        password: hashedPassword,
         location_id: locations[2]._id,
         role: 'employee',
         supervisor_id: supervisors[2]._id
@@ -139,6 +158,7 @@ const seedData = async () => {
         first_name: 'Ashley',
         last_name: 'Garcia',
         email: 'ashley.garcia@company.com',
+        password: hashedPassword,
         location_id: locations[2]._id,
         role: 'employee',
         supervisor_id: supervisors[2]._id
@@ -147,6 +167,7 @@ const seedData = async () => {
         first_name: 'James',
         last_name: 'Anderson',
         email: 'james.anderson@company.com',
+        password: hashedPassword,
         location_id: locations[3]._id, // Remote
         role: 'employee',
         supervisor_id: supervisors[0]._id
@@ -155,6 +176,7 @@ const seedData = async () => {
         first_name: 'Maria',
         last_name: 'Martinez',
         email: 'maria.martinez@company.com',
+        password: hashedPassword,
         location_id: locations[4]._id, // Austin
         role: 'employee',
         supervisor_id: supervisors[1]._id
@@ -163,6 +185,7 @@ const seedData = async () => {
         first_name: 'Christopher',
         last_name: 'Taylor',
         email: 'christopher.taylor@company.com',
+        password: hashedPassword,
         location_id: locations[0]._id,
         role: 'employee',
         supervisor_id: supervisors[0]._id
@@ -171,6 +194,7 @@ const seedData = async () => {
         first_name: 'Amanda',
         last_name: 'Thomas',
         email: 'amanda.thomas@company.com',
+        password: hashedPassword,
         location_id: locations[1]._id,
         role: 'employee',
         supervisor_id: supervisors[1]._id

@@ -2,30 +2,44 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:3001/api';
 
+const api = axios.create({ baseURL: API_BASE });
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const authAPI = {
+  login: data => axios.post(`${API_BASE}/login`, data)
+};
+
 export const employeeAPI = {
-  getAll: () => axios.get(`${API_BASE}/employees`),
-  create: (data) => axios.post(`${API_BASE}/employees`, data),
-  update: (id, data) => axios.put(`${API_BASE}/employees/${id}`, data),
-  delete: (id) => axios.delete(`${API_BASE}/employees/${id}`)
+  getAll: () => api.get('/employees'),
+  create: data => api.post('/employees', data),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: id => api.delete(`/employees/${id}`)
 };
 
 export const locationAPI = {
-  getAll: () => axios.get(`${API_BASE}/locations`),
-  create: (data) => axios.post(`${API_BASE}/locations`, data),
-  update: (id, data) => axios.put(`${API_BASE}/locations/${id}`, data),
-  delete: (id) => axios.delete(`${API_BASE}/locations/${id}`)
+  getAll: () => api.get('/locations'),
+  create: data => api.post('/locations', data),
+  update: (id, data) => api.put(`/locations/${id}`, data),
+  delete: id => api.delete(`/locations/${id}`)
 };
 
 export const denialReasonAPI = {
-  getAll: () => axios.get(`${API_BASE}/denial-reasons`),
-  create: (data) => axios.post(`${API_BASE}/denial-reasons`, data),
-  update: (id, data) => axios.put(`${API_BASE}/denial-reasons/${id}`, data),
-  delete: (id) => axios.delete(`${API_BASE}/denial-reasons/${id}`)
+  getAll: () => api.get('/denial-reasons'),
+  create: data => api.post('/denial-reasons', data),
+  update: (id, data) => api.put(`/denial-reasons/${id}`, data),
+  delete: id => api.delete(`/denial-reasons/${id}`)
 };
 
 export const vacationRequestAPI = {
-  getAll: () => axios.get(`${API_BASE}/vacation-requests`),
-  create: (data) => axios.post(`${API_BASE}/vacation-requests`, data),
-  approve: (id, supervisorId) => axios.put(`${API_BASE}/vacation-requests/${id}/approve`, { supervisor_id: supervisorId }),
-  deny: (id, data) => axios.put(`${API_BASE}/vacation-requests/${id}/deny`, data)
+  getAll: () => api.get('/vacation-requests'),
+  create: data => api.post('/vacation-requests', data),
+  approve: (id, supervisorId) => api.put(`/vacation-requests/${id}/approve`, { supervisor_id: supervisorId }),
+  deny: (id, data) => api.put(`/vacation-requests/${id}/deny`, data)
 };
