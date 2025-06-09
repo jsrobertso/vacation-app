@@ -97,6 +97,40 @@ app.put('/api/vacation-requests/:id', (req, res) => {
   }
 });
 
+app.put('/api/vacation-requests/:id/approve', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = vacationRequests.findIndex(req => req.id === id);
+  if (index !== -1) {
+    vacationRequests[index] = {
+      ...vacationRequests[index],
+      status: 'approved',
+      supervisorId: req.body.supervisor_id,
+      approvalDate: new Date().toISOString().split('T')[0]
+    };
+    res.json(vacationRequests[index]);
+  } else {
+    res.status(404).json({ error: 'Request not found' });
+  }
+});
+
+app.put('/api/vacation-requests/:id/deny', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = vacationRequests.findIndex(req => req.id === id);
+  if (index !== -1) {
+    vacationRequests[index] = {
+      ...vacationRequests[index],
+      status: 'denied',
+      denialReason: req.body.denial_reason_id,
+      denialComments: req.body.denial_comments,
+      supervisorId: req.body.supervisor_id,
+      denialDate: new Date().toISOString().split('T')[0]
+    };
+    res.json(vacationRequests[index]);
+  } else {
+    res.status(404).json({ error: 'Request not found' });
+  }
+});
+
 // Location routes
 app.get('/api/locations', (req, res) => {
   res.json(locations);
