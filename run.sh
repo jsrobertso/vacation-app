@@ -31,6 +31,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+# Ensure critical modules are installed even if node_modules exists
+if [ ! -f "node_modules/bcryptjs/package.json" ]; then
+    echo "Missing bcryptjs module, installing..."
+    npm install bcryptjs
+fi
+
 if [ ! -d "client/node_modules" ]; then
     echo "Installing frontend dependencies..."
     cd client && npm install && cd ..
