@@ -70,13 +70,22 @@ const seedData = async () => {
     ]);
     console.log('Created denial reasons');
 
-    const admin = await Employee.create({
-      first_name: 'Admin',
-      last_name: 'User',
-      email: 'admin@company.com',
-      password: hashedPassword,
-      role: 'administrator'
-    });
+    const admins = await Employee.insertMany([
+      {
+        first_name: 'Admin',
+        last_name: 'User',
+        email: 'admin@company.com',
+        password: hashedPassword,
+        role: 'administrator'
+      },
+      {
+        first_name: 'Js',
+        last_name: 'Robertso',
+        email: 'jsrobertso@gmail.com',
+        password: hashedPassword,
+        role: 'administrator'
+      }
+    ]);
 
     // Create Employees (Supervisors first)
     const supervisors = await Employee.insertMany([
