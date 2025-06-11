@@ -8,8 +8,6 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState(null);
   const [showReset, setShowReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,21 +31,10 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  const handleResetConfirm = async (e) => {
-    e.preventDefault();
-    try {
-      await authAPI.resetPassword({ email, phone, token: resetCode, password: newPassword });
-      setShowReset(false);
-      setResetSent(false);
-      setError(null);
-    } catch (err) {
-      setError('Password reset failed');
-    }
-  };
 
   return (
     <div className="login-container">
-      <h2>{showReset ? 'Reset Password' : 'Login'}</h2>
+      <h2>{showReset ? 'Password Reset' : 'Login'}</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {!showReset && (
@@ -97,27 +84,7 @@ const Login = ({ onLogin }) => {
       )}
 
       {showReset && resetSent && (
-        <form onSubmit={handleResetConfirm}>
-          <div className="form-group">
-            <input
-              type="text"
-              placeholder="Reset Code"
-              value={resetCode}
-              onChange={(e) => setResetCode(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <input
-              type="password"
-              placeholder="New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">Reset Password</button>
-        </form>
+        <p>Reset instructions sent.</p>
       )}
 
       {!showReset && (
@@ -136,16 +103,16 @@ const Login = ({ onLogin }) => {
 
       {showReset && (
         <p>
-          <button
-            type="button"
-            className="btn btn-link"
-            onClick={() => {
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
               setShowReset(false);
               setResetSent(false);
             }}
           >
             Back to Login
-          </button>
+          </a>
         </p>
       )}
     </div>
