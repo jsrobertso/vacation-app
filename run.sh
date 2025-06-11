@@ -37,6 +37,12 @@ if [ ! -f "node_modules/bcryptjs/package.json" ]; then
     npm install bcryptjs
 fi
 
+# Ensure nodemailer for password reset emails
+if [ ! -f "node_modules/nodemailer/package.json" ]; then
+    echo "Missing nodemailer module, installing..."
+    npm install nodemailer
+fi
+
 if [ ! -d "client/node_modules" ]; then
     echo "Installing frontend dependencies..."
     cd client && npm install && cd ..
