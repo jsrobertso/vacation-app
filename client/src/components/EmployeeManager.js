@@ -11,6 +11,7 @@ const EmployeeManager = () => {
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
     location_id: '',
     role: 'employee',
     supervisor_id: ''
@@ -76,6 +77,7 @@ const EmployeeManager = () => {
       first_name: employee.first_name,
       last_name: employee.last_name,
       email: employee.email,
+      phone: employee.phone || '',
       location_id: employee.location_id?.toString() || '',
       role: employee.role,
       supervisor_id: employee.supervisor_id?.toString() || ''
@@ -100,6 +102,7 @@ const EmployeeManager = () => {
       first_name: '',
       last_name: '',
       email: '',
+      phone: '',
       location_id: '',
       role: 'employee',
       supervisor_id: ''
@@ -153,6 +156,7 @@ const EmployeeManager = () => {
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Phone</th>
               <th>Location</th>
               <th>Role</th>
               <th>Supervisor</th>
@@ -164,6 +168,7 @@ const EmployeeManager = () => {
               <tr key={employee.id}>
                 <td>{employee.first_name} {employee.last_name}</td>
                 <td>{employee.email}</td>
+                <td>{employee.phone || 'N/A'}</td>
                 <td>{getLocationName(employee.location_id)}</td>
                 <td>{employee.role}</td>
                 <td>{getSupervisorName(employee.supervisor_id)}</td>
@@ -227,18 +232,28 @@ const EmployeeManager = () => {
                     />
                   </div>
                   <div className="form-group mb-3">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group mb-3">
-                    <label>Location</label>
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group mb-3">
+                  <label>Phone</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group mb-3">
+                  <label>Location</label>
                     <select
                       className="form-control"
                       name="location_id"
