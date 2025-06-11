@@ -43,3 +43,5 @@ export const vacationRequestAPI = {
   approve: (id, supervisorId) => api.put(`/vacation-requests/${id}/approve`, { supervisor_id: supervisorId }),
   deny: (id, data) => api.put(`/vacation-requests/${id}/deny`, data)
 };
+
+export { api };
