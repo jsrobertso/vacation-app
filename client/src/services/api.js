@@ -13,7 +13,9 @@ api.interceptors.request.use(config => {
 });
 
 export const authAPI = {
-  login: data => axios.post(`${API_BASE}/login`, data)
+  login: data => axios.post(`${API_BASE}/login`, data),
+  requestReset: data => axios.post(`${API_BASE}/request-password-reset`, data),
+  resetPassword: data => axios.post(`${API_BASE}/reset-password`, data)
 };
 
 export const employeeAPI = {

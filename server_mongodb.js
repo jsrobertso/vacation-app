@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const connectDB = require('./config/database');
 
 // Import models
@@ -13,6 +14,7 @@ const VacationRequest = require('./models/VacationRequest');
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+const transporter = nodemailer.createTransport({ jsonTransport: true });
 
 // Connect to MongoDB
 connectDB();
@@ -67,6 +69,69 @@ app.post('/api/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+app.post('/api/request-password-reset', async (req, res) => {
+  const { email, phone } = req.body;
+  if (!email && !phone) {
+    return res.status(400).json({ error: 'Email or phone required' });
+  }
+  try {
+    const query = email ? { email } : { phone };
+    const user = await Employee.findOne(query);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetToken = token;
+    user.resetTokenExpiration = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    if (email) {
+      await transporter.sendMail({
+        from: 'no-reply@vacation-app',
+        to: user.email,
+        subject: 'Password Reset',
+        text: `Your reset code is ${token}`
+      });
+    }
+
+    if (phone) {
+      console.log(`Send SMS to ${phone}: Your reset code is ${token}`);
+    }
+
+    res.json({ message: 'Reset instructions sent' });
+  } catch (err) {
+    console.error('Request password reset error:', err);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+  const { email, phone, token, password } = req.body;
+  if (!token || !(email || phone) || !password) {
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+  try {
+    const query = email ? { email } : { phone };
+    const user = await Employee.findOne(query);
+    if (!user ||
+        user.resetToken !== token ||
+        !user.resetTokenExpiration ||
+        user.resetTokenExpiration < Date.now()) {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetToken = undefined;
+    user.resetTokenExpiration = undefined;
+    await user.save();
+
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 
