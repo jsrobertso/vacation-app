@@ -18,6 +18,11 @@ const employeeSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  phone: {
+    type: String,
+    required: false,
+    trim: true
+  },
   password: {
     type: String,
     required: true
@@ -35,6 +40,14 @@ const employeeSchema = new mongoose.Schema({
   supervisor_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Employee',
+    required: false
+  },
+  resetToken: {
+    type: String,
+    required: false
+  },
+  resetTokenExpiration: {
+    type: Date,
     required: false
   }
 }, {
