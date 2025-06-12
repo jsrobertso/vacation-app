@@ -35,7 +35,8 @@
   },
   "proxy": "http://localhost:3001",
   "devDependencies": {
-    "@testing-library/react": "^14.2.0"
+    "@testing-library/react": "^14.2.0",
+    "babel-jest": "^27.5.1"
   },
   "jest": {
     "transformIgnorePatterns": [
