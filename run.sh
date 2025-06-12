@@ -3,10 +3,24 @@
 # Vacation Request Management App - Launch Script (Local Version)
 echo "🚀 Starting Vacation Request Management App..."
 
+# Use a project-local npm cache to avoid permissions issues
+export NPM_CONFIG_CACHE="$PWD/.npm-cache"
+mkdir -p "$NPM_CONFIG_CACHE"
+
 # Kill any existing processes on ports 3000 and 3001
 echo "📋 Cleaning up existing processes..."
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+
+kill_port() {
+    local PORT=$1
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -ti:"${PORT}" | xargs kill -9 2>/dev/null || true
+    else
+        echo "⚠️  lsof not found; skipping cleanup for port ${PORT}" >&2
+    fi
+}
+
+kill_port 3000
+kill_port 3001
 
 # Check if we have the required files
 if [ ! -f "package.json" ]; then
@@ -35,6 +49,12 @@ fi
 if [ ! -f "node_modules/bcryptjs/package.json" ]; then
     echo "Missing bcryptjs module, installing..."
     npm install bcryptjs
+fi
+
+# Ensure nodemailer module for password reset emails
+if [ ! -f "node_modules/nodemailer/package.json" ]; then
+    echo "Missing nodemailer module, installing..."
+    npm install nodemailer
 fi
 
 if [ ! -d "client/node_modules" ]; then
@@ -87,8 +107,8 @@ cleanup() {
     echo "🛑 Stopping servers..."
     kill $BACKEND_PID 2>/dev/null || true
     kill $FRONTEND_PID 2>/dev/null || true
-    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-    lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+    kill_port 3000
+    kill_port 3001
     echo "✅ All servers stopped"
     exit 0
 }
