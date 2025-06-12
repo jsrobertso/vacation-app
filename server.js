@@ -230,7 +230,11 @@ app.get('/api/dashboard/activity', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`API available at http://localhost:${PORT}/api/test`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api/test`);
+  });
+}
+
+module.exports = app;
