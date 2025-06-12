@@ -247,6 +247,21 @@ cd vacation_mongodb
 NODE_ENV=production node server.js
 ```
 
+## 🧪 Testing
+
+Backend API tests are written with **Jest** and **Supertest**. Run all tests with:
+
+```bash
+npm test
+```
+
+This starts the Express app in-memory and verifies core API endpoints.
+Frontend tests use React Testing Library and can be run with:
+
+```bash
+npm run test:client
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
