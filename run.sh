@@ -47,6 +47,12 @@ if [ ! -f "node_modules/bcryptjs/package.json" ]; then
     npm install bcryptjs
 fi
 
+# Ensure nodemailer module for password reset emails
+if [ ! -f "node_modules/nodemailer/package.json" ]; then
+    echo "Missing nodemailer module, installing..."
+    npm install nodemailer
+fi
+
 if [ ! -d "client/node_modules" ]; then
     echo "Installing frontend dependencies..."
     cd client && npm install && cd ..
@@ -97,8 +103,8 @@ cleanup() {
     echo "🛑 Stopping servers..."
     kill $BACKEND_PID 2>/dev/null || true
     kill $FRONTEND_PID 2>/dev/null || true
-    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-    lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+    kill_port 3000
+    kill_port 3001
     echo "✅ All servers stopped"
     exit 0
 }
