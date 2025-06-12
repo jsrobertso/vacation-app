@@ -15,7 +15,8 @@ kill_port() {
     if command -v lsof >/dev/null 2>&1; then
         lsof -ti:"${PORT}" | xargs kill -9 2>/dev/null || true
     else
-        echo "⚠️  lsof not found; skipping cleanup for port ${PORT}" >&2
+        echo "⚠️  lsof not found; using npx kill-port for ${PORT}" >&2
+        npx --yes kill-port "${PORT}" >/dev/null 2>&1 || true
     fi
 }
 
@@ -67,6 +68,10 @@ SERVER_FILE="server.js"
 if [ -f "server_mongodb.js" ] && [ -f "node_modules/mongoose/package.json" ]; then
     echo "✅ MongoDB dependencies found, using server_mongodb.js"
     SERVER_FILE="server_mongodb.js"
+    if ! timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+        echo "⚠️  MongoDB not reachable, falling back to server.js"
+        SERVER_FILE="server.js"
+    fi
 else
     echo "📝 Using basic server.js (in-memory data)"
 fi
@@ -82,7 +87,18 @@ sleep 3
 # Verify backend started
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
     echo "❌ Backend server failed to start"
-    exit 1
+    if [ "$SERVER_FILE" != "server.js" ]; then
+        echo "ℹ️  Falling back to basic server.js"
+        node server.js &
+        BACKEND_PID=$!
+        sleep 3
+        if ! kill -0 $BACKEND_PID 2>/dev/null; then
+            echo "❌ Fallback server failed to start"
+            exit 1
+        fi
+    else
+        exit 1
+    fi
 fi
 
 echo "✅ Backend server started (PID: $BACKEND_PID)"
