@@ -5,8 +5,18 @@ echo "🚀 Starting Vacation Request Management App..."
 
 # Kill any existing processes on ports 3000 and 3001
 echo "📋 Cleaning up existing processes..."
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+
+kill_port() {
+    local PORT=$1
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -ti:"${PORT}" | xargs kill -9 2>/dev/null || true
+    else
+        echo "⚠️  lsof not found; skipping cleanup for port ${PORT}" >&2
+    fi
+}
+
+kill_port 3000
+kill_port 3001
 
 # Check if we have the required files
 if [ ! -f "package.json" ]; then
