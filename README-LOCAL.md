@@ -34,6 +34,7 @@ cd client && npm install && cd ..
 - ✅ Smart server selection (MongoDB vs basic)
 - ✅ Process verification
 - ✅ Better error handling
+- ✅ Works even without `lsof` by falling back to `fuser` or `npx kill-port`
 - ✅ No OneDrive sync warnings
 
 ### **Improved stop.sh Script**
