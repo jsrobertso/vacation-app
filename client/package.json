@@ -12,13 +12,12 @@
   "scripts": {
     "start": "NODE_OPTIONS='--openssl-legacy-provider' react-scripts start",
     "build": "NODE_OPTIONS='--openssl-legacy-provider' react-scripts build",
-    "test": "react-scripts test",
+    "test": "vitest",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {
@@ -36,11 +35,6 @@
   "proxy": "http://localhost:3001",
   "devDependencies": {
     "@testing-library/react": "^14.2.0",
-    "babel-jest": "^24.8.0"
-  },
-  "jest": {
-    "transformIgnorePatterns": [
-      "/node_modules/(?!(axios)/)"
-    ]
+    "vitest": "^0.34.4"
   }
 }
