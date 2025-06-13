@@ -65,6 +65,43 @@ if [ ! -d "client/node_modules" ]; then
     cd client && npm install && cd ..
 fi
 
+# Ensure MongoDB-related modules
+if [ ! -f "node_modules/mongoose/package.json" ]; then
+    echo "Missing mongoose module, installing..."
+    npm install mongoose --no-save
+fi
+
+if [ ! -f "node_modules/mongodb-memory-server/package.json" ]; then
+    echo "Installing mongodb-memory-server for local MongoDB..."
+    npm install mongodb-memory-server --no-save
+fi
+
+# Ensure MongoDB running on port 27017
+ensure_mongodb() {
+    if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+        echo "✅ MongoDB running on port 27017"
+        return
+    fi
+
+    if command -v mongod >/dev/null 2>&1; then
+        echo "🔧 Starting local MongoDB on port 27017..."
+        mkdir -p data/db
+        mongod --dbpath data/db --port 27017 \
+            --bind_ip 127.0.0.1 --fork --logpath data/mongod.log
+        sleep 3
+        if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+            echo "✅ MongoDB started"
+        else
+            echo "❌ Failed to start MongoDB"
+        fi
+    else
+        echo "⚠️  MongoDB not running and 'mongod' not found."
+        echo "   Please install MongoDB or start it manually on port 27017."
+    fi
+}
+
+ensure_mongodb
+
 # Determine which server to use
 SERVER_FILE="server.js"
 if [ -f "server_mongodb.js" ] && [ -f "node_modules/mongoose/package.json" ]; then
