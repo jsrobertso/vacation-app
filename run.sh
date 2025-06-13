@@ -71,48 +71,24 @@ if [ ! -f "node_modules/mongoose/package.json" ]; then
     npm install mongoose --no-save
 fi
 
-if [ ! -f "node_modules/mongodb-memory-server/package.json" ]; then
-    echo "Installing mongodb-memory-server for local MongoDB..."
-    npm install mongodb-memory-server --no-save
-fi
-
 # Ensure MongoDB running on port 27017
-ensure_mongodb() {
+check_mongodb() {
     if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
         echo "✅ MongoDB running on port 27017"
-        return
-    fi
-
-    if command -v mongod >/dev/null 2>&1; then
-        echo "🔧 Starting local MongoDB on port 27017..."
-        mkdir -p data/db
-        mongod --dbpath data/db --port 27017 \
-            --bind_ip 127.0.0.1 --fork --logpath data/mongod.log
-        sleep 3
-        if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
-            echo "✅ MongoDB started"
-        else
-            echo "❌ Failed to start MongoDB"
-        fi
     else
-        echo "⚠️  MongoDB not running and 'mongod' not found."
-        echo "   Please install MongoDB or start it manually on port 27017."
+        echo "❌ MongoDB is not running on port 27017"
+        echo "   Please start MongoDB and retry."
+        exit 1
     fi
 }
 
-ensure_mongodb
+check_mongodb
 
 # Determine which server to use
-SERVER_FILE="server.js"
-if [ -f "server_mongodb.js" ] && [ -f "node_modules/mongoose/package.json" ]; then
-    echo "✅ MongoDB dependencies found, using server_mongodb.js"
-    SERVER_FILE="server_mongodb.js"
-    if ! timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
-        echo "⚠️  MongoDB not reachable, falling back to server.js"
-        SERVER_FILE="server.js"
-    fi
-else
-    echo "📝 Using basic server.js (in-memory data)"
+SERVER_FILE="server_mongodb.js"
+if [ ! -f "$SERVER_FILE" ] || [ ! -f "node_modules/mongoose/package.json" ]; then
+    echo "❌ MongoDB server file or dependencies missing"
+    exit 1
 fi
 
 # Start the backend server
@@ -126,18 +102,7 @@ sleep 3
 # Verify backend started
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
     echo "❌ Backend server failed to start"
-    if [ "$SERVER_FILE" != "server.js" ]; then
-        echo "ℹ️  Falling back to basic server.js"
-        node server.js &
-        BACKEND_PID=$!
-        sleep 3
-        if ! kill -0 $BACKEND_PID 2>/dev/null; then
-            echo "❌ Fallback server failed to start"
-            exit 1
-        fi
-    else
-        exit 1
-    fi
+    exit 1
 fi
 
 echo "✅ Backend server started (PID: $BACKEND_PID)"
