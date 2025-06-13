@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "mongodb": "node server_mongodb.js",
-    "test": "jest",
+    "test": "mocha \"tests/**/*.test.js\"",
     "test:client": "npm test --prefix client"
   },
   "dependencies": {
@@ -19,8 +19,8 @@
     "nodemailer": "^6.9.3"
   },
   "devDependencies": {
-    "jest": "^27.5.1",
-    "babel-jest": "^24.8.0",
+    "mocha": "^10.2.0",
+    "chai": "^4.3.7",
     "nodemon": "^3.0.1",
     "supertest": "^7.1.1"
   },
