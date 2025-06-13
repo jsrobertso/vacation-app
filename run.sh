@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Vacation Request Management App - Launch Script (Local Version)
+# Vacation Request Management App - Startup Script
+
+set -e
+
 echo "🚀 Starting Vacation Request Management App..."
 
-# Use a project-local npm cache to avoid permissions issues
+# Use project-local npm cache
 export NPM_CONFIG_CACHE="$PWD/.npm-cache"
 mkdir -p "$NPM_CONFIG_CACHE"
-
-# Kill any existing processes on ports 3000 and 3001
-echo "📋 Cleaning up existing processes..."
 
 kill_port() {
     local PORT=$1
@@ -25,59 +25,38 @@ kill_port() {
 kill_port 3000
 kill_port 3001
 
-# Check if we have the required files
-if [ ! -f "package.json" ]; then
-    echo "❌ package.json not found!"
-    exit 1
-fi
+check_requirements() {
+    if [ ! -f package.json ]; then
+        echo "❌ package.json not found" >&2
+        exit 1
+    fi
+    if [ ! -f server_mongodb.js ]; then
+        echo "❌ server_mongodb.js missing" >&2
+        exit 1
+    fi
+    if [ ! -d client ]; then
+        echo "❌ client directory missing" >&2
+        exit 1
+    fi
+}
 
-if [ ! -f "server.js" ]; then
-    echo "❌ server.js not found!"
-    exit 1
-fi
+install_deps() {
+    echo "📦 Checking dependencies..."
+    if [ ! -d node_modules ]; then
+        npm install
+    fi
+    if [ ! -d client/node_modules ]; then
+        npm install --prefix client
+    fi
+    if [ ! -f node_modules/mongoose/package.json ]; then
+        npm install mongoose --no-save
+    fi
+    if [ ! -f node_modules/mongodb-memory-server/package.json ] && \
+       [ ! -f node_modules/mongodb-memory-server-core/package.json ]; then
+        npm install mongodb-memory-server --no-save
+    fi
+}
 
-if [ ! -d "client" ]; then
-    echo "❌ client directory not found!"
-    exit 1
-fi
-
-# Install dependencies if needed
-echo "📦 Checking dependencies..."
-if [ ! -d "node_modules" ]; then
-    echo "Installing backend dependencies..."
-    npm install
-fi
-
-# Ensure critical modules are installed even if node_modules exists
-if [ ! -f "node_modules/bcryptjs/package.json" ]; then
-    echo "Missing bcryptjs module, installing..."
-    npm install bcryptjs
-fi
-
-# Ensure nodemailer module for password reset emails
-if [ ! -f "node_modules/nodemailer/package.json" ]; then
-    echo "Missing nodemailer module, installing..."
-    npm install nodemailer
-fi
-
-if [ ! -d "client/node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    cd client && npm install && cd ..
-fi
-
-# Ensure MongoDB-related modules
-if [ ! -f "node_modules/mongoose/package.json" ]; then
-    echo "Missing mongoose module, installing..."
-    npm install mongoose --no-save
-fi
-
-if [ ! -f "node_modules/mongodb-memory-server/package.json" ] && \
-   [ ! -f "node_modules/mongodb-memory-server-core/package.json" ]; then
-    echo "Missing mongodb-memory-server module, installing..."
-    npm install mongodb-memory-server --no-save
-fi
-
-# Ensure MongoDB running on port 27017, start one if possible
 ensure_mongodb() {
     if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
         echo "✅ MongoDB running on port 27017"
@@ -88,77 +67,48 @@ ensure_mongodb() {
         echo "⚙️  Starting local mongod on port 27017..."
         mkdir -p data/db
         mongod --dbpath data/db --bind_ip localhost --port 27017 --fork --logpath mongod.log
-        MONGO_PID=$(pgrep -f "--dbpath data/db" | head -n 1)
         sleep 3
         if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
-            echo "✅ MongoDB started (PID: $MONGO_PID)"
+            echo "✅ MongoDB started"
+            MONGO_PID=$(pgrep -f "--dbpath data/db" | head -n 1)
             return
         fi
-        echo "❌ Failed to start MongoDB"
+        echo "❌ Failed to start MongoDB" >&2
         exit 1
     fi
 
-    if [ -f "node_modules/mongodb-memory-server/package.json" ] || \
-       [ -f "node_modules/mongodb-memory-server-core/package.json" ]; then
-        echo "⚙️  Starting in-memory MongoDB on port 27017..."
-        node mongo-runner.js &
-        MONGO_PID=$!
-        sleep 3
-        if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
-            echo "✅ In-memory MongoDB started (PID: $MONGO_PID)"
-            return
-        fi
-        echo "❌ Failed to start in-memory MongoDB"
-        exit 1
+    echo "⚙️  Starting in-memory MongoDB..."
+    node mongo-runner.js &
+    MONGO_PID=$!
+    sleep 3
+    if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+        echo "✅ In-memory MongoDB started (PID: $MONGO_PID)"
+        return
     fi
-
-    echo "❌ MongoDB is not running and no method to start it was found"
+    echo "❌ Failed to start in-memory MongoDB" >&2
     exit 1
 }
 
-ensure_mongodb
+start_backend() {
+    echo "🔧 Starting backend server on port 3001..."
+    node server_mongodb.js &
+    BACKEND_PID=$!
+    sleep 3
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "❌ Backend failed to start" >&2
+        exit 1
+    fi
+    echo "✅ Backend started (PID: $BACKEND_PID)"
+}
 
-# Determine which server to use
-SERVER_FILE="server_mongodb.js"
-if [ ! -f "$SERVER_FILE" ] || [ ! -f "node_modules/mongoose/package.json" ]; then
-    echo "❌ MongoDB server file or dependencies missing"
-    exit 1
-fi
+start_frontend() {
+    echo "⚛️  Starting React frontend on port 3000..."
+    npm start --prefix client &
+    FRONTEND_PID=$!
+}
 
-# Start the backend server
-echo "🔧 Starting backend server on port 3001..."
-node $SERVER_FILE &
-BACKEND_PID=$!
-
-# Wait a moment for backend to start
-sleep 3
-
-# Verify backend started
-if ! kill -0 $BACKEND_PID 2>/dev/null; then
-    echo "❌ Backend server failed to start"
-    exit 1
-fi
-
-echo "✅ Backend server started (PID: $BACKEND_PID)"
-
-# Start the frontend server
-echo "⚛️  Starting React frontend on port 3000..."
-cd client && npm start &
-FRONTEND_PID=$!
-cd ..
-
-echo ""
-echo "✅ App started successfully!"
-echo "📱 Frontend: http://localhost:3000"
-echo "🔧 Backend:  http://localhost:3001"
-echo "🧪 API Test: http://localhost:3001/api/test"
-echo ""
-echo "Press Ctrl+C to stop all servers"
-
-# Function to handle cleanup on exit
 cleanup() {
-    echo ""
-    echo "🛑 Stopping servers..."
+    echo "\n🛑 Stopping servers..."
     kill $BACKEND_PID 2>/dev/null || true
     kill $FRONTEND_PID 2>/dev/null || true
     if [ -n "$MONGO_PID" ]; then
@@ -170,8 +120,20 @@ cleanup() {
     exit 0
 }
 
-# Set up signal handling
 trap cleanup SIGINT SIGTERM
 
-# Wait for either process to exit
+check_requirements
+install_deps
+ensure_mongodb
+start_backend
+start_frontend
+
+echo ""
+echo "✅ App started successfully!"
+echo "📱 Frontend: http://localhost:3000"
+echo "🔧 Backend:  http://localhost:3001"
+echo "🧪 API Test: http://localhost:3001/api/test"
+echo ""
+echo "Press Ctrl+C to stop all servers"
+
 wait
