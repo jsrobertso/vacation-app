@@ -65,17 +65,64 @@ if [ ! -d "client/node_modules" ]; then
     cd client && npm install && cd ..
 fi
 
-# Determine which server to use
-SERVER_FILE="server.js"
-if [ -f "server_mongodb.js" ] && [ -f "node_modules/mongoose/package.json" ]; then
-    echo "✅ MongoDB dependencies found, using server_mongodb.js"
-    SERVER_FILE="server_mongodb.js"
-    if ! timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
-        echo "⚠️  MongoDB not reachable, falling back to server.js"
-        SERVER_FILE="server.js"
+# Ensure MongoDB-related modules
+if [ ! -f "node_modules/mongoose/package.json" ]; then
+    echo "Missing mongoose module, installing..."
+    npm install mongoose --no-save
+fi
+
+if [ ! -f "node_modules/mongodb-memory-server/package.json" ] && \
+   [ ! -f "node_modules/mongodb-memory-server-core/package.json" ]; then
+    echo "Missing mongodb-memory-server module, installing..."
+    npm install mongodb-memory-server --no-save
+fi
+
+# Ensure MongoDB running on port 27017, start one if possible
+ensure_mongodb() {
+    if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+        echo "✅ MongoDB running on port 27017"
+        return
     fi
-else
-    echo "📝 Using basic server.js (in-memory data)"
+
+    if command -v mongod >/dev/null 2>&1; then
+        echo "⚙️  Starting local mongod on port 27017..."
+        mkdir -p data/db
+        mongod --dbpath data/db --bind_ip localhost --port 27017 --fork --logpath mongod.log
+        MONGO_PID=$(pgrep -f "--dbpath data/db" | head -n 1)
+        sleep 3
+        if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+            echo "✅ MongoDB started (PID: $MONGO_PID)"
+            return
+        fi
+        echo "❌ Failed to start MongoDB"
+        exit 1
+    fi
+
+    if [ -f "node_modules/mongodb-memory-server/package.json" ] || \
+       [ -f "node_modules/mongodb-memory-server-core/package.json" ]; then
+        echo "⚙️  Starting in-memory MongoDB on port 27017..."
+        node mongo-runner.js &
+        MONGO_PID=$!
+        sleep 3
+        if timeout 1 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then
+            echo "✅ In-memory MongoDB started (PID: $MONGO_PID)"
+            return
+        fi
+        echo "❌ Failed to start in-memory MongoDB"
+        exit 1
+    fi
+
+    echo "❌ MongoDB is not running and no method to start it was found"
+    exit 1
+}
+
+ensure_mongodb
+
+# Determine which server to use
+SERVER_FILE="server_mongodb.js"
+if [ ! -f "$SERVER_FILE" ] || [ ! -f "node_modules/mongoose/package.json" ]; then
+    echo "❌ MongoDB server file or dependencies missing"
+    exit 1
 fi
 
 # Start the backend server
@@ -89,18 +136,7 @@ sleep 3
 # Verify backend started
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
     echo "❌ Backend server failed to start"
-    if [ "$SERVER_FILE" != "server.js" ]; then
-        echo "ℹ️  Falling back to basic server.js"
-        node server.js &
-        BACKEND_PID=$!
-        sleep 3
-        if ! kill -0 $BACKEND_PID 2>/dev/null; then
-            echo "❌ Fallback server failed to start"
-            exit 1
-        fi
-    else
-        exit 1
-    fi
+    exit 1
 fi
 
 echo "✅ Backend server started (PID: $BACKEND_PID)"
@@ -125,6 +161,9 @@ cleanup() {
     echo "🛑 Stopping servers..."
     kill $BACKEND_PID 2>/dev/null || true
     kill $FRONTEND_PID 2>/dev/null || true
+    if [ -n "$MONGO_PID" ]; then
+        kill $MONGO_PID 2>/dev/null || true
+    fi
     kill_port 3000
     kill_port 3001
     echo "✅ All servers stopped"
